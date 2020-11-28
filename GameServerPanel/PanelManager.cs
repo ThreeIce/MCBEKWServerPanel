@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace GameServerPanel
 {
@@ -27,6 +28,16 @@ namespace GameServerPanel
         /// 游戏进程控制器
         /// </summary>
         public GameConsoleManager GameManager = null;
+        #region 事件列表
+        /// <summary>
+        /// 在自动重启时调用
+        /// </summary>
+        public Action<int> OnAutoRestarting;
+        /// <summary>
+        /// 因自动重启次数过多而放弃自动重启时调用
+        /// </summary>
+        public Action OnCancelAutoRestarting;
+        #endregion
         static PanelManager()
         {
             RootDic = Directory.GetCurrentDirectory();
@@ -43,6 +54,7 @@ namespace GameServerPanel
             }
             //初始化GameManager
             GameManager = new GameConsoleManager(Config.ServerType);
+            AutoRestartInit();
             //TODO:初始化WebSocket和链接CoreManager
         }
         /// <summary>
@@ -80,6 +92,78 @@ namespace GameServerPanel
             //TODO: 启动游戏服务器逻辑
             GameManager.Start();
         }
+        /// <summary>
+        /// 关闭游戏服务器
+        /// </summary>
+        public void StopGameServer()
+        {
+            //TODO: 关闭游戏服务器逻辑
+            GameManager.Stop();
+        }
+        #region 自动重启
+
+        /// <summary>
+        /// 自动重启次数
+        /// </summary>
+        private int autoRestartTimes;
+        /// <summary>
+        /// 最大自动重启次数
+        /// </summary>
+        private const int MaxAutoRestartTimes = 5;
+        /// <summary>
+        /// 崩服自动重启功能初始化
+        /// </summary>
+        private void AutoRestartInit()
+        {
+            //注册事件
+            GameManager.OnCrashWhenStarting += CrashAutoRestart;
+            GameManager.OnCrashWhenRunning += CrashAutoRestart;
+        }
+        /// <summary>
+        /// 崩服自动重启逻辑
+        /// </summary>
+        private async void CrashAutoRestart()
+        {
+            //判断是否要自动重启
+            if (!Config.IsAutoRestart) return;
+            autoRestartTimes += 1;
+            //如果自动重启次数过多，取消自动重启
+            if (autoRestartTimes > MaxAutoRestartTimes)
+            {
+                autoRestartTimes = 0;
+                OnCancelAutoRestarting?.Invoke();
+                return;
+            }
+            //等待一秒，Crash事件“大概”全部执行完后开始重启
+            await Task.Delay(1000);
+            OnAutoRestarting?.Invoke(autoRestartTimes);
+            //监听以判断重启是否成功
+            GameManager.OnGameEndStarting += RestartSuccess;
+            GameManager.OnCrashWhenStarting += FailedRestart;
+            //启动
+            StartGameServer();
+        }
+        /// <summary>
+        /// 自动重启失败时调用该回调
+        /// </summary>
+        private void FailedRestart()
+        {
+            //取消事件监听
+            GameManager.OnGameEndStarting -= RestartSuccess;
+            GameManager.OnCrashWhenStarting -= FailedRestart;
+        }
+        /// <summary>
+        /// 自动重启成功时调用该回调
+        /// </summary>
+        private void RestartSuccess()
+        {
+            //取消事件监听
+            GameManager.OnGameEndStarting -= RestartSuccess;
+            GameManager.OnCrashWhenStarting -= FailedRestart;
+            //重置自动重启次数
+            autoRestartTimes = 0;
+        }
+        #endregion
         /// <summary>
         /// 连接核心面板逻辑
         /// </summary>

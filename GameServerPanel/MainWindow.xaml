@@ -47,9 +47,12 @@
                     <Label Content="服务端文件：" Height="25" Canvas.Left="-1" Canvas.Top="49" Width="79"/>
                     <Label x:Name="GameServerType" Height="25" Canvas.Left="78" Canvas.Top="49" Width="78" Content="{Binding ServerType, Mode=OneWay}"/>
                     <Button x:Name="ServerFileButton" Content="配置服务端文件" Height="20" Canvas.Left="10" Canvas.Top="79" Width="103" Background="#FFF3F3F3"/>
-                    <Button x:Name="ServerConfigButton" Content="设置服务端属性" Height="20" Canvas.Left="118" Canvas.Top="79" Width="108" Background="#FFF3F3F3"/>
+                    <Button x:Name="ServerConfigButton" Content="管理BDS配置" Height="20" Canvas.Left="118" Canvas.Top="79" Width="108" Background="#FFF3F3F3"/>
                     <Label Content="服务器设置" Height="25" Width="89" Canvas.Left="0" Canvas.Top="0"/>
-                    <Button x:Name="ServerStartButton" Content="启动服务端" Height="19" Canvas.Left="146" Canvas.Top="251" Width="80" BorderBrush="Black" Background="#FFF3F3F3" Click="ServerStart"/>
+                    <Button x:Name="ServerStartButton" Content="启动服务端" Height="19" Canvas.Left="146" Canvas.Top="251" Width="80" BorderBrush="Black" Background="#FFF3F3F3" Click="OnStartButtonClick"/>
+                    <CheckBox Content="崩服自动重启" Height="16" Canvas.Left="11" Canvas.Top="129" Width="107" ClickMode="Release" IsChecked="{Binding IsAutoRestart, Mode=TwoWay, UpdateSourceTrigger=Default}"/>
+                    <Button x:Name="ServerFileButton_Copy" Content="管理EZ配置" Height="20" Canvas.Left="10" Canvas.Top="104" Width="103" Background="#FFF3F3F3" IsEnabled="False"/>
+                    <Button x:Name="ServerFileButton_Copy1" Content="插件/addon管理" Height="20" Canvas.Left="120" Canvas.Top="104" Width="104" Background="#FFF3F3F3" IsEnabled="False"/>
                 </Canvas>
             </Border>
         </Canvas>

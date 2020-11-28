@@ -23,57 +23,33 @@ namespace GameServerPanel
         /// </summary>
         public string CorePanelAddress
         {
-            get => corePanelAddress; set
-            {
-                if (corePanelAddress != value)
-                {
-                    corePanelAddress = value;
-                    OnPropertyChanged(() => CorePanelAddress);
-                }
-
-            }
+            get => corePanelAddress; set => OnPropertyChanged(ref corePanelAddress, value);
         }
 
         /// <summary>
         /// 核心面板端口
         /// </summary>
-        public float CorePanelPort { get => corePanelPort; set {
-                if (corePanelPort != value)
-                {
-                    corePanelPort = value;
-                    OnPropertyChanged(() => CorePanelPort);
-                }
-            } 
+        public float CorePanelPort { get => corePanelPort; set => OnPropertyChanged(ref corePanelPort, value);
         }
 
         /// <summary>
         /// 服务端的类型
         /// </summary>
-        public GameServerType ServerType { get => serverType; set
-            {
-                if (serverType != value)
-                {
-                    serverType = value;
-                    OnPropertyChanged(() => ServerType);
-                }
-            }
-        }
+        public GameServerType ServerType { get => serverType; set => OnPropertyChanged(ref serverType, value); }
 
         /// <summary>
         /// 启用WebSocket服务的端口
         /// </summary>
         public float WebSocketPort
         {
-            get => webSocketPort; set
-            {
-                if (webSocketPort != value)
-                {
-                    webSocketPort = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => webSocketPort; set => OnPropertyChanged(ref webSocketPort, value);
         }
+        /// <summary>
+        /// 是否崩服时自动重启
+        /// </summary>
+        public bool IsAutoRestart { get => isAutoRestart; set => OnPropertyChanged(ref isAutoRestart,value); }
 
+        private bool isAutoRestart = true;
         private string corePanelAddress = "localhost";
         private float corePanelPort = 13576;
         private GameServerType serverType = GameServerType.None;
@@ -81,21 +57,19 @@ namespace GameServerPanel
 
         //属性变更通知面板上的显示值更改
         public event PropertyChangedEventHandler PropertyChanged;
+
         /// <summary>
         /// 当属性变更时的通知回调
         /// </summary>
-        /// <typeparam name="T">属性类型</typeparam>
-        /// <param name="property">"() => 要更改的属性"这样一个lambda表达式</param>
-        private void OnPropertyChanged<T>(Expression<Func<T>> property)
+        private void OnPropertyChanged<T>(ref T property,T value,[CallerMemberName]string PropertyName = null)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs((property.Body as MemberExpression).Member.Name));
-            SetToFile();
-        }
-        //另一种实现方式的尝试
-        private void OnPropertyChanged([CallerMemberName]string PropertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(PropertyName));
-            SetToFile();
+            if (!property.Equals(value))
+            {
+                property = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(PropertyName));
+                SetToFile();
+            }
+            
         }
 
         /// <summary>
@@ -119,7 +93,7 @@ namespace GameServerPanel
         /// </summary>
         public void SetToFile()
         {
-            File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(this));
+            File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(this,Formatting.Indented));
         }
         /// <summary>
         /// 创建新的配置文件

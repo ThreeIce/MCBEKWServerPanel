@@ -40,8 +40,50 @@ namespace GameServerPanel
             //监听控制台输出并显示
             Manager.GameManager.OnLog += OnConsoleOutputLog;
             Manager.GameManager.OnError += OnConsoleOutputError;
-
+            //监听崩服重启事件
+            Manager.OnAutoRestarting += OnRestarting;
+            Manager.OnCancelAutoRestarting += OnCancelAutoRestarting;
+            //监听服务端状态变更事件
+            Manager.GameManager.PropertyChanged += (s, args) =>
+            {
+                if (args.PropertyName == "GameState")
+                {
+                    ChangeStartButton(Manager.GameManager.GameState);
+                }
+            };
         }
+        public void ChangeStartButton(GameServerState state)
+        {
+            switch (state)
+            {
+                case GameServerState.Off:
+                    ServerStartButton.Content = "启动服务端";
+                    ServerStartButton.IsEnabled = true;
+                    break;
+                case GameServerState.Starting:
+                    ServerStartButton.Content = "启动中";
+                    ServerStartButton.IsEnabled = false;
+                    break;
+                case GameServerState.Running:
+                    ServerStartButton.Content = "关闭服务端";
+                    ServerStartButton.IsEnabled = true;
+                    break;
+                case GameServerState.Stopping:
+                    ServerStartButton.Content = "关闭中";
+                    ServerStartButton.IsEnabled = false;
+                    break;
+            }
+        }
+        #region 崩服重启UI显示
+        private void OnRestarting(int t)
+        {
+            Console.Inlines.Add(new Run($"服务端崩溃，尝试第{t}次重启" + Environment.NewLine) { Foreground = Brushes.Blue });
+        }
+        private void OnCancelAutoRestarting()
+        {
+            Console.Inlines.Add(new Run("崩服重启失败多次，已停止崩服重启，请检查问题！" + Environment.NewLine) { Foreground = Brushes.Blue });
+        }
+        #endregion
         //TODO:支持Log过多时自动删除顶部
         /// <summary>
         /// 游戏服务器输出Log时调用的事件
@@ -57,10 +99,33 @@ namespace GameServerPanel
         {
             Console.Inlines.Add(new Run(message + Environment.NewLine) { Foreground = Brushes.Red });
         }
-
-        private void ServerStart(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// 启动/关闭服务端按钮按下事件
+        /// </summary>
+        private void OnStartButtonClick(object sender, RoutedEventArgs e)
         {
-            Manager.StartGameServer();
+            try
+            {
+                switch (Manager.GameManager.GameState)
+                {
+                    case GameServerState.Off:
+                        Manager.StartGameServer();
+                        break;
+                    case GameServerState.Starting:
+                        MessageBox.Show("正在启动中，请勿重复启动！");
+                        break;
+                    case GameServerState.Running:
+                        Manager.StopGameServer();
+                        break;
+                    case GameServerState.Stopping:
+                        MessageBox.Show("正在关闭中，请勿重复关闭！");
+                        break;
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
         /// <summary>
         /// 窗口关闭逻辑
@@ -73,6 +138,8 @@ namespace GameServerPanel
             //取消监听控制台输出
             Manager.GameManager.OnError -= OnConsoleOutputError;
             Manager.GameManager.OnLog -= OnConsoleOutputLog;
+            //TODO:在支持后台运行后把关闭就kill服务端改成结束进程kill服务端
+            Manager.GameManager.Kill();
         }
         /// <summary>
         /// 向服务端发送指令
@@ -85,7 +152,7 @@ namespace GameServerPanel
                 if (InputCommand.Text == "stop")
                 {
                     //停止要另外处理
-                    Manager.GameManager.Stop();
+                    Manager.StopGameServer();
                 }
                 else
                 {

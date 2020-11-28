@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace GameServerPanel
 {
@@ -55,6 +56,7 @@ namespace GameServerPanel
             get => gameState; set => OnPropertyChanged<GameServerState>(ref gameState, value);
         }
         private GameServerState gameState = GameServerState.Off;
+        #region 事件大全
         /// <summary>
         /// 在游戏命令行输出一行时调用
         /// </summary>
@@ -76,22 +78,22 @@ namespace GameServerPanel
         /// </summary>
         public Action OnGameBeginStopping;
         /// <summary>
-        /// 在游戏关闭完成时调用
+        /// 在游戏关闭完成时调用（非正常关闭不会调用！）
         /// </summary>
         public Action OnGameEndStopping;
         /// <summary>
         /// 在游戏因为各种神奇原因关闭失败时调用
         /// </summary>
         public Action OnFailStartStoping;
-
         /// <summary>
-        /// 要终止监听Log信息时将其设为true
+        /// 启动游戏时崩服则调用（调用顺序在OnGameEndStopping之前！）
         /// </summary>
-        private bool EndListeningLog;
+        public Action OnCrashWhenStarting;
         /// <summary>
-        /// 要终止监听Error信息时将其设为true
+        /// 游戏运行时崩服则调用（调用顺序在OnGameEndStoping之前！）
         /// </summary>
-        private bool EndListeningError;
+        public Action OnCrashWhenRunning;
+        #endregion
         /// <summary>
         /// 游戏进程
         /// </summary>
@@ -130,8 +132,9 @@ namespace GameServerPanel
             OnGameEndStarting += () => GameState = GameServerState.Running;
             OnGameBeginStopping += () => GameState = GameServerState.Stopping;
             OnGameEndStopping += () => GameState = GameServerState.Off;
-
+            
         }
+        
         /// <summary>
         /// 设置服务端类型，以设置启动端信息
         /// </summary>
@@ -200,9 +203,6 @@ namespace GameServerPanel
             GameProcess.StartInfo.StandardInputEncoding = Encoding.UTF8;
             GameProcess.StartInfo.StandardOutputEncoding = Encoding.UTF8;
 
-            //添加程序停止运行监听
-            GameProcess.EnableRaisingEvents = true;
-            GameProcess.Exited += OnProcessExit;
             //启动
             GameProcess.Start();
             //调用启动事件
@@ -236,8 +236,7 @@ namespace GameServerPanel
                     break;
                 }
                 OnLog?.Invoke(s);
-            } while (!EndListeningLog);
-            EndListeningLog = false;
+            } while (true);
         }
         /// <summary>
         /// 监听Error输出
@@ -254,16 +253,9 @@ namespace GameServerPanel
                     break;
                 }
                 OnError?.Invoke(s);
-            } while (!EndListeningError);
-            EndListeningError = false;
-        }
-        /// <summary>
-        /// 停止监听
-        /// </summary>
-        public void EndListening()
-        {
-            EndListeningLog = true;
-            EndListeningError = true;
+            } while (true);
+            //以Error流读出null为判断进程关闭的基准，并调用进程关闭事件
+            OnProcessExit();
         }
         /// <summary>
         /// 监听输出并确定何时进入运行状态的回调
@@ -326,7 +318,7 @@ namespace GameServerPanel
         /// <summary>
         /// 当游戏进程结束时的回调
         /// </summary>
-        protected void OnProcessExit(object sender,EventArgs args)
+        protected void OnProcessExit()
         {
             //判断是自然关闭还是错误关闭
             if(GameState == GameServerState.Stopping)
@@ -336,15 +328,17 @@ namespace GameServerPanel
             }
             else if(GameState == GameServerState.Starting)
             {
+
                 //TODO:启动失败
-
-
+                
+                OnCrashWhenStarting?.Invoke();
                 OnGameEndStopping?.Invoke();
+
             }
             else
             {
                 //TODO:运行出错
-
+                OnCrashWhenRunning?.Invoke();
                 OnGameEndStopping?.Invoke();
             }
         }

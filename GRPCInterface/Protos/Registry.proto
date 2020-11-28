@@ -1,0 +1,28 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GRPCInterface";
+
+package Registry;
+//用于处理游戏服务器的登录和玩家的登录
+
+
+service Registry{
+	//游戏服务器的登录/注册处理
+	rpc GameServerLogin (GameServerInfo) returns (GameServerLoginResult);
+	rpc PlayerLogin (PlayerLoginInfo) returns (PlayerData);
+}
+
+message GameServerInfo{
+	string ServerName = 1;
+}
+message GameServerLoginResult{
+	bool IsSuccess = 1;
+}
+message PlayerLoginInfo{
+	string xuid = 1;
+	string XboxId = 2;
+}
+message PlayerData{
+	bool IsNewPlayer = 1;
+	int32 Level = 2;
+}

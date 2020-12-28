@@ -48,12 +48,17 @@ namespace GameServerPanel
         /// 是否崩服时自动重启
         /// </summary>
         public bool IsAutoRestart { get => isAutoRestart; set => OnPropertyChanged(ref isAutoRestart,value); }
+        /// <summary>
+        /// 是否在安装服务端时自动备份
+        /// </summary>
+        public bool IsAutoBackupWhenInstall { get => isAutoBackupWhenInstall; set => OnPropertyChanged(ref isAutoBackupWhenInstall, value); }
 
         private bool isAutoRestart = true;
         private string corePanelAddress = "localhost";
         private float corePanelPort = 13576;
         private GameServerType serverType = GameServerType.None;
         private float webSocketPort = 36330;
+        private bool isAutoBackupWhenInstall = true;
 
         //属性变更通知面板上的显示值更改
         public event PropertyChangedEventHandler PropertyChanged;
@@ -111,7 +116,8 @@ namespace GameServerPanel
         None = 0,
         BDS = 1,
         EZ = 2,
-        MengGu = 4
+        MengGu = 4,
+        BDX = 8
     }
 
 }

@@ -108,9 +108,6 @@ namespace GameServerPanel
             {
                 switch (Manager.GameManager.GameState)
                 {
-                    case GameServerState.Off:
-                        Manager.StartGameServer();
-                        break;
                     case GameServerState.Starting:
                         MessageBox.Show("正在启动中，请勿重复启动！");
                         break;
@@ -119,6 +116,12 @@ namespace GameServerPanel
                         break;
                     case GameServerState.Stopping:
                         MessageBox.Show("正在关闭中，请勿重复关闭！");
+                        break;
+                    case GameServerState.Installing:
+                        MessageBox.Show("正在安装中，请勿启动！");
+                        break;
+                    default:
+                        Manager.StartGameServer();
                         break;
                 }
             }
@@ -139,7 +142,8 @@ namespace GameServerPanel
             Manager.GameManager.OnError -= OnConsoleOutputError;
             Manager.GameManager.OnLog -= OnConsoleOutputLog;
             //TODO:在支持后台运行后把关闭就kill服务端改成结束进程kill服务端
-            Manager.GameManager.Kill();
+            if(Manager.GameManager.GameState != GameServerState.Off)
+                Manager.GameManager.Kill();
         }
         /// <summary>
         /// 向服务端发送指令
@@ -179,6 +183,19 @@ namespace GameServerPanel
                 //清空指令框
                 InputCommand.Text = "";
             }
+        }
+        /// <summary>
+        /// 显示服务端配置窗口
+        /// </summary>
+        private void ServerFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Manager.GameManager.GameState != GameServerState.Off)
+            {
+                MessageBox.Show("服务端不处于关闭状态是不能安装/升级服务端的！");
+                return;
+            }
+            Install i = new Install(Manager);
+            i.ShowDialog();
         }
     }
 }

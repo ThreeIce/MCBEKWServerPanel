@@ -46,7 +46,7 @@
                     <TextBox x:Name="WSPort" Height="20" Canvas.Left="57" Canvas.Top="24" TextWrapping="NoWrap" Width="61" BorderBrush="Black" VerticalContentAlignment="Center" Text="{Binding WebSocketPort, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                     <Label Content="服务端文件：" Height="25" Canvas.Left="-1" Canvas.Top="49" Width="79"/>
                     <Label x:Name="GameServerType" Height="25" Canvas.Left="78" Canvas.Top="49" Width="78" Content="{Binding ServerType, Mode=OneWay}"/>
-                    <Button x:Name="ServerFileButton" Content="配置服务端文件" Height="20" Canvas.Left="10" Canvas.Top="79" Width="103" Background="#FFF3F3F3"/>
+                    <Button x:Name="ServerFileButton" Content="配置服务端文件" Height="20" Canvas.Left="10" Canvas.Top="79" Width="103" Background="#FFF3F3F3" Click="ServerFileButton_Click"/>
                     <Button x:Name="ServerConfigButton" Content="管理BDS配置" Height="20" Canvas.Left="118" Canvas.Top="79" Width="108" Background="#FFF3F3F3"/>
                     <Label Content="服务器设置" Height="25" Width="89" Canvas.Left="0" Canvas.Top="0"/>
                     <Button x:Name="ServerStartButton" Content="启动服务端" Height="19" Canvas.Left="146" Canvas.Top="251" Width="80" BorderBrush="Black" Background="#FFF3F3F3" Click="OnStartButtonClick"/>

@@ -29,7 +29,11 @@ namespace GameServerPanel
         /// <summary>
         /// 关闭中
         /// </summary>
-        Stopping
+        Stopping,
+        /// <summary>
+        /// 安装中
+        /// </summary>
+        Installing
     }
     /// <summary>
     /// 游戏进程控制器
@@ -86,11 +90,11 @@ namespace GameServerPanel
         /// </summary>
         public Action OnFailStartStoping;
         /// <summary>
-        /// 启动游戏时崩服则调用（调用顺序在OnGameEndStopping之前！）
+        /// 启动游戏时崩服则调用
         /// </summary>
         public Action OnCrashWhenStarting;
         /// <summary>
-        /// 游戏运行时崩服则调用（调用顺序在OnGameEndStoping之前！）
+        /// 游戏运行时崩服则调用
         /// </summary>
         public Action OnCrashWhenRunning;
         #endregion
@@ -132,6 +136,8 @@ namespace GameServerPanel
             OnGameEndStarting += () => GameState = GameServerState.Running;
             OnGameBeginStopping += () => GameState = GameServerState.Stopping;
             OnGameEndStopping += () => GameState = GameServerState.Off;
+            OnCrashWhenRunning += () => GameState = GameServerState.Off;
+            OnCrashWhenStarting += () => GameState = GameServerState.Off;
             
         }
         
@@ -194,7 +200,7 @@ namespace GameServerPanel
             //配置启动信息
             GameProcess.StartInfo.FileName = GamePath;
             GameProcess.StartInfo.Arguments = StartArgs;
-            //GameProcess.StartInfo.CreateNoWindow = true;//Debug阶段不启用，TODO: Debug结束后启用
+            GameProcess.StartInfo.CreateNoWindow = true;
             //重定向输入输出，方便程序接受
             GameProcess.StartInfo.RedirectStandardOutput = true;
             GameProcess.StartInfo.RedirectStandardInput = true;
@@ -328,18 +334,13 @@ namespace GameServerPanel
             }
             else if(GameState == GameServerState.Starting)
             {
-
                 //TODO:启动失败
-                
                 OnCrashWhenStarting?.Invoke();
-                OnGameEndStopping?.Invoke();
-
             }
             else
             {
                 //TODO:运行出错
                 OnCrashWhenRunning?.Invoke();
-                OnGameEndStopping?.Invoke();
             }
         }
         /// <summary>

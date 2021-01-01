@@ -22,8 +22,8 @@
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <Label Content="BDS状态：" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" Width="65" FontSize="14"/>
-                    <Label x:Name="BDSStatus" Content="未安装" HorizontalAlignment="Left" Height="30" Margin="75,0,0,0" VerticalAlignment="Center" Width="137" Grid.ColumnSpan="2" FontSize="14"/>
-                    <Label Content="服务端文件" HorizontalAlignment="Left" Height="25" VerticalAlignment="Center" Width="84" Grid.Row="1" Margin="10,0,0,0" FontSize="14"/>
+                    <Label x:Name="BDSStatus" VerticalContentAlignment="Center" Content="未安装" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="137" Grid.ColumnSpan="2" FontSize="14" Grid.Column="1"/>
+                    <Label Content="服务端文件" HorizontalAlignment="Left" Height="25" VerticalAlignment="Bottom" Width="84" Grid.Row="1" Margin="10,0,0,0" FontSize="14"/>
                     <TextBox x:Name="BDS_FilePath" Height="25" Text="C:\" TextWrapping="NoWrap" VerticalContentAlignment="Center" Width="300" Grid.Row="1" Grid.Column="1" TextAlignment="Left" FontSize="14"/>
                     <Button x:Name="BDS_ChooseFile" Content="选择文件" Grid.Column="2" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Height="25" Width="90" Click="ChooseFile_Click" FontSize="14" Margin="0,0,10,0"/>
                     <Button x:Name="BDS_Install" Content="安装" Grid.Column="2" HorizontalAlignment="Right" Height="24" Grid.Row="2" VerticalAlignment="Bottom" Width="58" Click="Install_Click" Margin="0,0,10,8" FontSize="14"/>
@@ -43,12 +43,38 @@
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <Label Content="EZ状态：" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" Width="65" FontSize="14"/>
-                    <Label x:Name="EZStatus" Content="未安装" HorizontalAlignment="Left" Height="30" Margin="75,0,0,0" VerticalAlignment="Center" Width="137" Grid.ColumnSpan="2" FontSize="14"/>
+                    <Label x:Name="EZStatus" VerticalContentAlignment="Center" Content="未安装" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="137" Grid.ColumnSpan="2" FontSize="14" Grid.Column="1"/>
                     <Label Content="服务端文件" HorizontalAlignment="Left" Height="25" VerticalAlignment="Center" Width="84" Grid.Row="1" Margin="10,0,0,0" FontSize="14"/>
                     <TextBox x:Name="EZ_FilePath" Height="25" Text="C:\" TextWrapping="NoWrap" VerticalContentAlignment="Center" Width="300" Grid.Row="1" Grid.Column="1" TextAlignment="Left" FontSize="14"/>
                     <Button x:Name="EZ_ChooseFile" Content="选择文件" Grid.Column="2" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Height="25" Width="90" Click="ChooseFile_Click" FontSize="14" Margin="0,0,10,0"/>
                     <Button x:Name="EZ_Install" Content="安装" Grid.Column="2" HorizontalAlignment="Right" Height="24" Grid.Row="2" VerticalAlignment="Bottom" Width="58" Click="Install_Click" Margin="0,0,10,8" FontSize="14"/>
                     <CheckBox x:Name="EZ_Backup_Option" Content="安装时备份数据" HorizontalAlignment="Left" Margin="10,0,0,10" Grid.Row="2" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Height="19" Width="167" FontSize="14" IsChecked="{Binding IsAutoBackupWhenInstall, Mode=TwoWay, UpdateSourceTrigger=Default}"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="BDX">
+                <Grid Background="#FFE5E5E5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="BDX状态：" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" Width="84" FontSize="14"/>
+                    <Label x:Name="BDXStatus" VerticalContentAlignment="Center" Content="未安装" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="137" Grid.ColumnSpan="2" FontSize="14" Grid.Column="1"/>
+
+                    <Label Content="服务端文件" VerticalContentAlignment="Center" HorizontalAlignment="Center" Height="30" VerticalAlignment="Center" Width="84" Grid.Row="1" FontSize="14" Margin="10,0,0,0"/>
+                    <TextBox x:Name="BDX_FilePath" Height="25" Text="C:\" TextWrapping="NoWrap" VerticalContentAlignment="Center" Width="300" Grid.Row="1" Grid.Column="1" TextAlignment="Left" FontSize="14"/>
+                    <Button x:Name="BDX_ChooseFile" Content="选择文件" Grid.Column="2" HorizontalAlignment="Right" Grid.Row="1" VerticalAlignment="Center" Height="25" Width="90" Click="ChooseFile_Click" FontSize="14" Margin="0,0,10,0"/>
+                    <Button x:Name="BDX_Install" Content="安装" Grid.Column="2" HorizontalAlignment="Right" Height="24" Grid.Row="3" VerticalAlignment="Bottom" Width="58" Click="Install_Click" Margin="0,0,10,8" FontSize="14"/>
+                    <CheckBox x:Name="BDX_Backup_Option" Content="安装时备份数据" HorizontalAlignment="Left" Margin="10,0,0,10" Grid.Row="3" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Height="19" Width="167" FontSize="14" IsChecked="{Binding IsAutoBackupWhenInstall, Mode=TwoWay, UpdateSourceTrigger=Default}"/>
+                    <Label Content="BDX激活码" HorizontalAlignment="Center" Grid.Row="2" VerticalAlignment="Center" Width="84" FontSize="14" Margin="10,0,0,0"/>
+                    <TextBox x:Name="BDX_CDK" Height="25" TextWrapping="NoWrap" VerticalContentAlignment="Center" Width="300" Grid.Row="2" Grid.Column="1" TextAlignment="Left" FontSize="14" Margin="0,2,0,2"/>
+                    <Button x:Name="BDX_CDK_Save_Button" Content="保存" Grid.Column="2" HorizontalAlignment="Right" Grid.Row="2" VerticalAlignment="Top" Height="25" Width="90" FontSize="14" Click="BDX_CDK_Save_Button_Click" Margin="0,0,10,0"/>
                 </Grid>
             </TabItem>
             <TabItem Header="梦之故里加载器">
@@ -59,6 +85,23 @@
             </TabItem>
             <TabItem Header="JSR">
                 <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem Header="其它操作">
+                <Grid Background="#FFE5E5E5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="Auto"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="Others_Backup_Option" Content="操作时备份数据" HorizontalAlignment="Left" Margin="10,0,0,10" Grid.Row="2" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Height="19" Width="167" FontSize="14" IsChecked="{Binding IsAutoBackupWhenInstall, Mode=TwoWay, UpdateSourceTrigger=Default}"/>
+                    <Button x:Name="ResetServer_Button" Content="重置服务端" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Click="ResetServer_Button_Click"/>
+                </Grid>
+
             </TabItem>
         </TabControl>
     </Grid>

@@ -38,6 +38,8 @@ namespace GameServerPanel
         {
             BDSStatus.Content = (Manager.Config.ServerType & GameServerType.BDS) == GameServerType.BDS ? "已安装" : "未安装";
             EZStatus.Content = (Manager.Config.ServerType & GameServerType.EZ) == GameServerType.EZ ? "已安装" : "未安装";
+            BDXStatus.Content = (Manager.Config.ServerType & GameServerType.BDX) == GameServerType.BDX ? "已安装" : "未安装";
+            BDX_CDK.Text = Manager.GetBDXCDK();
         }
         /// <summary>
         /// 打开选择文件对话框——BDS压缩包
@@ -80,6 +82,9 @@ namespace GameServerPanel
                 case nameof(EZ_ChooseFile):
                     EZ_FilePath.Text = FilePath;
                     break;
+                case nameof(BDX_ChooseFile):
+                    BDX_FilePath.Text = FilePath;
+                    break;
                 default:
                     throw new ArgumentException("输入的按钮名称不符！", "ButtonName");
 
@@ -96,6 +101,8 @@ namespace GameServerPanel
                     return BDS_FilePath.Text;
                 case nameof(EZ_Install):
                     return EZ_FilePath.Text;
+                case nameof(BDX_Install):
+                    return BDX_FilePath.Text;
                 default:
                     throw new ArgumentException("输入的按钮名称不符！", nameof(ButtonName));
             }
@@ -111,6 +118,8 @@ namespace GameServerPanel
                     return GameServerType.BDS;
                 case nameof(EZ_Install):
                     return GameServerType.EZ;
+                case nameof(BDX_Install):
+                    return GameServerType.BDX;
                 default:
                     throw new ArgumentException("输入的按钮名称不符！", nameof(ButtonName));
             }
@@ -122,38 +131,23 @@ namespace GameServerPanel
             ProgressBar bar = new ProgressBar();
             bar.progressBar.Value = 0;
             bar.progressBar.Maximum = 100;
-            bar.Show();
             bar.RunWhenStart = async () =>
             {
-                try
+                await Manager.Install(GetType(SenderName), GetFilePath(SenderName), BDS_Backup_Option.IsChecked == true, (s, e) =>
                 {
-                    await Manager.Install(GetType(SenderName), GetFilePath(SenderName), BDS_Backup_Option.IsChecked == true, (s, e) =>
-                    {
-                        //设置进度条内容
-                        bar.operationId.Content = $"待完成任务：{e.CurrentOperationId}/{e.TotalNum} 任务完成百分比：{e.CurrentOperation.PercentDone}";
-                        bar.progressBar.Value = e.CurrentOperation.PercentDone;
-                        bar.FileName.Content = e.CurrentOperation.CurrentFileName;
-                    });
-                }
-                catch (Exception E)
-                {
-                    MessageBox.Show(E.Message);
-                    //关闭bar
-                    bar.CanBeClosed = true;
-                    bar.Close();
-                }
+                    //设置进度条内容
+                    bar.operationId.Content = $"待完成任务：{e.CurrentOperationId}/{e.TotalNum} 任务完成百分比：{e.CurrentOperation.PercentDone}";
+                    bar.progressBar.Value = e.CurrentOperation.PercentDone;
+                    bar.FileName.Content = e.CurrentOperation.CurrentFileName;
+                });
                 //关闭bar
                 bar.CanBeClosed = true;
                 bar.Close();
-                Init();
             };
             try
             {
                 bar.ShowDialog();
-            }
-            catch (InvalidOperationException)
-            {
-                //TODO:一个很神奇“无法在隐藏窗口上调用ShowDialog”的错误会抛出，但貌似没有半毛钱影响，所以决定把它捕了，该问题等待解决
+                Init();
             }
             catch(Exception E)
             {
@@ -162,7 +156,51 @@ namespace GameServerPanel
                 bar.CanBeClosed = true;
                 bar.Close();
             }
+            //如果安装的是BDX，顺便保存一次激活码
+            if (SenderName == nameof(BDX_Install))
+                BDX_CDK_Save_Button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+        /// <summary>
+        /// 重置服务端按钮点击
+        /// </summary>
+        private void ResetServer_Button_Click(object sender, RoutedEventArgs e)
+        {
+            //创建进度条
+            ProgressBar bar = new ProgressBar();
+            bar.progressBar.Value = 0;
+            bar.progressBar.Maximum = 100;
+            bar.RunWhenStart += async () =>
+            {
+                await Manager.ResetServer(BDS_Backup_Option.IsChecked == true, (s, e) =>
+                {
+                    //设置进度条内容
+                    bar.operationId.Content = $"待完成任务：{e.CurrentOperationId}/{e.TotalNum} 任务完成百分比：{e.CurrentOperation.PercentDone}";
+                    bar.progressBar.Value = e.CurrentOperation.PercentDone;
+                    bar.FileName.Content = e.CurrentOperation.CurrentFileName;
+                });
+                bar.CanBeClosed = true;
+                bar.Close();
+            };
+            try
+            {
+                bar.ShowDialog();
+                Init();
+            }
+            catch (Exception E)
+            {
+                MessageBox.Show(E.Message);
+            }
+            finally
+            {
+                //关闭bar
+                bar.CanBeClosed = true;
+                bar.Close();
+            }
         }
 
+        private void BDX_CDK_Save_Button_Click(object sender, RoutedEventArgs e)
+        {
+            Manager.SaveBDXCDK(BDX_CDK.Text);
+        }
     }
 }

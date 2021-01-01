@@ -174,6 +174,11 @@ namespace GameServerPanel
                 //单开梦故
                 GamePath = GameDic + "/MCDllInject.exe";
                 StartArgs = "bedrock_server.exe MCModDll";
+            }else if((type & GameServerType.BDX) == GameServerType.BDX)
+            {
+                //BDX启动逻辑（由于BDX和EZ/MG都不能套，所以不考虑套娃情况）
+                GamePath = GameDic + "/RunBDX.bat";
+                StartArgs = "";
             }
             else
             {

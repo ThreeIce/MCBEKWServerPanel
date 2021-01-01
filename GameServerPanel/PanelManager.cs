@@ -61,25 +61,58 @@ namespace GameServerPanel
         /// <summary>
         /// c#插件目录
         /// </summary>
-        public static string CSRDic { get => PluginsDic + "\\CSR"; }
+        public static string CSRPluginDic { get => PluginsDic + "\\CSR"; }
         /// <summary>
         /// JSR插件目录
         /// </summary>
-        public static string JSRDic { get => PluginsDic + "\\JSR"; }
+        public static string JSRPluginDic { get => PluginsDic + "\\JSR"; }
         /// <summary>
         /// 梦之故里插件目录
         /// </summary>
-        public static string MGDic { get => PluginsDic + "\\MG"; }
+        public static string MGPluginDic { get => PluginsDic + "\\MG"; }
         /// <summary>
-        /// EZ插件目录
+        /// EZ C++插件目录
         /// </summary>
-        public static string EZDic { get => PluginsDic + "\\EZ"; }
+        public static string EZPluginDic { get => PluginsDic + "\\EZ"; }
+        /// <summary>
+        /// BDX C++插件目录
+        /// </summary>
+        public static string BDXPluginDic { get => PluginsDic + "\\BDX"; }
+        /// <summary>
+        /// BDXLua插件目录
+        /// </summary>
+        public static string BDXLuaPluginDic { get => PluginsDic + "\\Plugin"; }
+        /// <summary>
+        /// 配置文件目录
+        /// </summary>
+        public static string ConfigsDic { get => ServerDataDic + "\\Configs"; }
+        /// <summary>
+        /// BDS配置路径
+        /// </summary>
+        public static string BDSConfigPath { get => ServerDataDic + "\\server.properties"; }
+        /// <summary>
+        /// EZ配置路径
+        /// </summary>
+        public static string EZConfigPath { get => ServerDataDic + "\\ezcustom.yaml"; }
+        /// <summary>
+        /// 各种杂项配置文件目录，包含BDX配置文件
+        /// </summary>
+        public static string BasicConfigDic { get => ServerDataDic + "\\config"; }
         /// <summary>
         /// 备份目录
         /// </summary>
         public static string BackupsDic { get => RootDic + "\\Backups"; }
+        /// <summary>
+        /// 存档备份目录
+        /// </summary>
         public static string WorldsBackupDic { get => BackupsDic + "\\worlds"; }
+        /// <summary>
+        /// 服务端数据备份目录
+        /// </summary>
         public static string DatasBackupDic { get => BackupsDic + "\\datas"; }
+        /// <summary>
+        /// 服务端备份目录
+        /// </summary>
         public static string ServerBackupDic { get => BackupsDic + "\\server"; }
         /*文件目录结构：
      * GameServerPanel：
@@ -104,6 +137,11 @@ namespace GameServerPanel
      *   -JSR:
      *   -MG:
      *   -EZ:
+     *  -Configs: //各类配置文件
+     *   -server.properties//BDX配置文件
+     *   -ezcustom.yaml//EZ配置文件
+     *   -config:
+     *    //各类杂项配置文件，包括BDX配置文件
      * -Backups://备份文件
      *  -worlds://存档备份
      *  -datas://服务端数据备份
@@ -134,15 +172,27 @@ namespace GameServerPanel
         /// <summary>
         /// 开始安装时调用
         /// </summary>
-        public Action BeginInstalling;
+        public Action<GameServerType> BeginInstalling;
         /// <summary>
         /// 安装结束时调用
         /// </summary>
-        public Action EndInstalling;
+        public Action<GameServerType> EndInstalling;
         /// <summary>
         /// 安装失败时调用，传参为错误内容
         /// </summary>
-        public Action<Exception> FailToInstall;
+        public Action<GameServerType,Exception> FailToInstall;
+        /// <summary>
+        /// 开始重置服务端类型时调用
+        /// </summary>
+        public Action BeginResetingServer;
+        /// <summary>
+        /// 成功重置服务端类型时调用
+        /// </summary>
+        public Action EndResetingServer;
+        /// <summary>
+        /// 重置服务端类型失败时调用
+        /// </summary>
+        public Action<Exception> FailedToResetServer;
         #endregion
         static PanelManager()
         {
@@ -163,9 +213,12 @@ namespace GameServerPanel
             GameManager = new GameConsoleManager(Config.ServerType);
             AutoRestartInit();
             //初始化事件内容
-            BeginInstalling += () => GameManager.GameState = GameServerState.Installing;
-            EndInstalling += () => GameManager.GameState = GameServerState.Off;
-            FailToInstall += (ex) => GameManager.GameState = GameServerState.Off;
+            BeginInstalling += (t) => GameManager.GameState = GameServerState.Installing;
+            EndInstalling += (t) => GameManager.GameState = GameServerState.Off;
+            FailToInstall += (t,ex) => GameManager.GameState = GameServerState.Off;
+            BeginResetingServer += () => GameManager.GameState = GameServerState.Installing;
+            EndResetingServer += () => GameManager.GameState = GameServerState.Off;
+            FailedToResetServer += (ex) => GameManager.GameState = GameServerState.Off;
             //TODO:初始化WebSocket和链接CoreManager
         }
         /// <summary>
@@ -188,10 +241,16 @@ namespace GameServerPanel
             Directory.CreateDirectory(WorldsDic);
             Directory.CreateDirectory(DataDic);
             Directory.CreateDirectory(PluginsDic);
-            Directory.CreateDirectory(CSRDic);
-            Directory.CreateDirectory(MGDic);
-            Directory.CreateDirectory(JSRDic);
-            Directory.CreateDirectory(EZDic);
+            Directory.CreateDirectory(CSRPluginDic);
+            Directory.CreateDirectory(MGPluginDic);
+            Directory.CreateDirectory(JSRPluginDic);
+            Directory.CreateDirectory(EZPluginDic);
+            Directory.CreateDirectory(BDXPluginDic);
+            Directory.CreateDirectory(BDXLuaPluginDic);
+            Directory.CreateDirectory(ConfigsDic);
+            File.Create(BDSConfigPath);
+            File.Create(EZConfigPath);
+            Directory.CreateDirectory(BasicConfigDic);
             Directory.CreateDirectory(BackupsDic);
             Directory.CreateDirectory(WorldsBackupDic);
             Directory.CreateDirectory(DatasBackupDic);
@@ -393,8 +452,10 @@ namespace GameServerPanel
 
         #endregion
         #region ServerIntall
-        
-        public async Task Install(GameServerType type, string path, bool AutoBackup = true,EventHandler<FileOperationsProgress> progressChange = null)
+        /// <summary>
+        /// 安装服务端通用接口，BDX不走此路
+        /// </summary>
+        public async Task Install(GameServerType type, string path, bool IsAutoBackup = true,EventHandler<FileOperationsProgress> progressChange = null)
         {
             //只有不在运行时可以安装
             if (GameManager.GameState != GameServerState.Off)
@@ -410,7 +471,7 @@ namespace GameServerPanel
                     throw new ServerTypeConflictException(conflict);
             }
             //开始安装
-            BeginInstalling?.Invoke();
+            BeginInstalling?.Invoke(type);
             try
             {
                 //创建文件操作类
@@ -418,52 +479,9 @@ namespace GameServerPanel
                 //设置BDS安装的任务总数
                 progress.TotalNum = 1;
                 //备份
-                if (AutoBackup)
+                if (IsAutoBackup)
                 {
-                    //把备份的任务数添加上去
-                    progress.TotalNum += 3;
-                    try
-                    {
-                        //备份服务端文件
-                        progress.CurrentOperationId += 1;
-                        await BackupServer((s, e) =>
-                        {
-                            progress.CurrentOperation = e;
-                            progressChange?.Invoke(this, progress);
-                        });
-                    }
-                    catch (BackupException)
-                    {
-                        //没文件要备份就直接跳过
-                    }
-                    try
-                    {
-                        //备份世界
-                        progress.CurrentOperationId += 1;
-                        await BackupWorlds((s, e) =>
-                        {
-                            progress.CurrentOperation = e;
-                            progressChange?.Invoke(this, progress);
-                        });
-                    }
-                    catch (BackupException)
-                    {
-                        //没文件要备份就直接跳过
-                    }
-                    try
-                    {
-                        //备份数据
-                        progress.CurrentOperationId += 1;
-                        await BackupDatas((s, e) =>
-                        {
-                            progress.CurrentOperation = e;
-                            progressChange?.Invoke(this, progress);
-                        });
-                    }
-                    catch (BackupException)
-                    {
-                        //没文件要备份就直接跳过
-                    }
+                    await AutoBackup(progress, progressChange);
                 }
                 progress.CurrentOperationId += 1;
                 switch (type)
@@ -477,7 +495,16 @@ namespace GameServerPanel
                         });
                         break;
                     case GameServerType.EZ:
+                        //安装EZ
                         await InstallEZ(path, (s, e) =>
+                        {
+                            progress.CurrentOperation = e;
+                            progressChange?.Invoke(this, progress);
+                        });
+                        break;
+                    case GameServerType.BDX:
+                        //安装BDX
+                        await InstallBDX(path,(s,e) =>
                         {
                             progress.CurrentOperation = e;
                             progressChange?.Invoke(this, progress);
@@ -492,13 +519,66 @@ namespace GameServerPanel
                     SetGameServerType(GameManager.serverType | type);
                 }
                 //结束安装
-                EndInstalling?.Invoke();
+                EndInstalling?.Invoke(type);
             }
             catch(Exception e)
             {
                 //出错先调用安装出错回调，然后继续把错误往外抛
-                FailToInstall?.Invoke(e);
+                FailToInstall?.Invoke(type,e);
                 throw;
+            }
+        }
+        /// <summary>
+        /// 内部复用自动备份的代码的函数，会对世界、服务端、服务端数据都进行备份
+        /// </summary>
+        /// <param name="op">要进行自动备份的任务的操作进程表示对象，会自动给操作总量+3</param>
+        /// <param name="progressChange">原本任务的进度变更事件</param>
+        /// <returns></returns>
+        private async Task AutoBackup(FileOperationsProgress progress,EventHandler<FileOperationsProgress> progressChange)
+        {
+            //把备份的任务数添加上去
+            progress.TotalNum += 3;
+            try
+            {
+                //备份服务端文件
+                progress.CurrentOperationId += 1;
+                await BackupServer((s, e) =>
+                {
+                    progress.CurrentOperation = e;
+                    progressChange?.Invoke(this, progress);
+                });
+            }
+            catch (BackupException)
+            {
+                //没文件要备份就直接跳过
+            }
+            try
+            {
+                //备份世界
+                progress.CurrentOperationId += 1;
+                await BackupWorlds((s, e) =>
+                {
+                    progress.CurrentOperation = e;
+                    progressChange?.Invoke(this, progress);
+                });
+            }
+            catch (BackupException)
+            {
+                //没文件要备份就直接跳过
+            }
+            try
+            {
+                //备份数据
+                progress.CurrentOperationId += 1;
+                await BackupDatas((s, e) =>
+                {
+                    progress.CurrentOperation = e;
+                    progressChange?.Invoke(this, progress);
+                });
+            }
+            catch (BackupException)
+            {
+                //没文件要备份就直接跳过
             }
         }
         /// <summary>
@@ -512,21 +592,34 @@ namespace GameServerPanel
             if ((Config.ServerType & type) == type)
                 throw new ArgumentException("要检测的服务端类型已经安装了！");
             var result = GameServerType.None;
-            //如果有装EZ，检测目标是否会和EZ冲突
+            //如果有装EZ的冲突检测
             if((Config.ServerType & GameServerType.EZ) == GameServerType.EZ)
             {
                 //BDX和EZ冲突
                 if (type == GameServerType.BDX)
                     result |= GameServerType.EZ;
             }
-            //如果有装BDX，检测目标是否和BDX冲突
+            //如果有装BDX的冲突检测
             if((Config.ServerType & GameServerType.BDX) == GameServerType.BDX)
             {
                 //EZ和BDX冲突
                 if (type == GameServerType.EZ)
                     result |= GameServerType.BDX;
+                //BDX和梦故冲突
+                if(type == GameServerType.MengGu)
+                {
+                    result |= GameServerType.BDX;
+                }
             }
-            //根据不同的类型调用不同的安装方式
+            //如果有装MG的冲突检测
+            if((Config.ServerType & GameServerType.MengGu) == GameServerType.MengGu)
+            {
+                //MG和BDX冲突
+                if(type == GameServerType.BDX)
+                {
+                    result |= GameServerType.BDX;
+                }
+            }
             return result;
         }
         /// <summary>
@@ -546,12 +639,13 @@ namespace GameServerPanel
             {
                 throw new ArgumentException("BDS服务端压缩包文件必须是zip");
             }
-            //如果是首次安装，创建World、behavior_packs，resource_packs目录的符号链接（不知道是啥百度mklink）
+            //如果是首次安装，创建World、behavior_packs，resource_packs目录和server.properties的符号链接（不知道是啥百度mklink）
             if ((GameManager.serverType & GameServerType.BDS) != GameServerType.BDS)
             {
-                Utils.RunCMD($"mklink /D \"{ServerDic}/worlds\" \"..\\{Utils.GetRelativePath(PanelManager.WorldsDic)}\"");
-                Utils.RunCMD($"mklink /D \"{ServerDic}/behavior_packs\" \"..\\{Utils.GetRelativePath(PanelManager.BehaviorPacksDic)}\"");
-                Utils.RunCMD($"mklink /D \"{ServerDic}/resource_packs\" \"..\\{Utils.GetRelativePath(PanelManager.ResourcePacksDic)}\"");
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/worlds\" \"..\\{Utils.GetRelativePath(PanelManager.WorldsDic)}\"");
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/behavior_packs\" \"..\\{Utils.GetRelativePath(PanelManager.BehaviorPacksDic)}\"");
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/resource_packs\" \"..\\{Utils.GetRelativePath(PanelManager.ResourcePacksDic)}\"");
+                await Utils.RunCMD($"mklink \"{ServerDic}/server.properties\" \"..\\{Utils.GetRelativePath(PanelManager.BDSConfigPath)}\"");
             }
             //创建解压类和进度
             SevenZipExtractor extractor = new SevenZipExtractor(BDSPath);
@@ -586,10 +680,11 @@ namespace GameServerPanel
             //检测文件是否有效
             if (!File.Exists(EZPath))
                 throw new ArgumentException("该文件不存在!");
-            //首次安装要创建Mods的符号链接
+            //首次安装要创建Mods和custom.yaml的符号链接
             if ((GameManager.serverType & GameServerType.EZ) != GameServerType.EZ)
             {
-                Utils.RunCMD($"mklink /D \"{ServerDic}/Mods\" \"..\\{Utils.GetRelativePath(PanelManager.EZDic)}\"");
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/Mods\" \"..\\{Utils.GetRelativePath(PanelManager.EZPluginDic)}\"");
+                await Utils.RunCMD($"mklink \"{ServerDic}/custom.yaml\" \"..\\{Utils.GetRelativePath(EZConfigPath)}\"");
             }
             //创建解压类和进度
             SevenZipExtractor extractor = new SevenZipExtractor(EZPath);
@@ -624,6 +719,126 @@ namespace GameServerPanel
                     stream.Close();
                     await stream.DisposeAsync();
                 }
+            }
+        }
+        /// <summary>
+        /// 安装BDX
+        /// </summary>
+        public async Task InstallBDX(string BDXPath,EventHandler<FileOperationProgress> progressChange = null)
+        {
+            //检测文件是否有效
+            if (!File.Exists(BDXPath))
+                throw new ArgumentException("该文件不存在!");
+            //如果是首次安装
+            if ((GameManager.serverType & GameServerType.BDX) != GameServerType.BDX)
+            {
+                //创建bdxmod,lua,config目录的符号链接（不知道是啥百度mklink）
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/bdxmod\" \"..\\{Utils.GetRelativePath(BDXPluginDic)}\"");
+                await Utils.RunCMD($"mklink /D \"{ServerDic}/lua\" \"..\\{Utils.GetRelativePath(BDXLuaPluginDic)}\"");
+                //config目录的符号链接可能会在装别的启动器时创建，所以先检测一下
+                if (!Directory.Exists(ServerDic + "/config"))
+                {
+                    await Utils.RunCMD($"mklink /D \"{ServerDic}/config\" \"..\\{Utils.GetRelativePath(BasicConfigDic)}\"");
+                }
+                //BDX运行有个头疼的目录问题，为了解决通过bat运行
+                File.WriteAllText(ServerDic + "/RunBDX.bat", "cd server&bedrock_server.exe");
+                File.WriteAllText(ServerDic + "/RunRoDB.bat", "cd server&RoDB.exe");
+            }
+            //创建解压类和进度
+            SevenZipExtractor extractor = new SevenZipExtractor(BDXPath);
+            var progress = new FileOperationProgress();
+            //当压缩进度变化时调用事件
+            extractor.FileExtractionStarted += (s, e) =>
+            {
+                if (progressChange != null)
+                {
+                    progress.PercentDone = e.PercentDone;
+                    progress.CurrentFileName = e.FileInfo.FileName;
+                    progressChange.Invoke(this, progress);
+                }
+            };
+            //用完释放
+            using (extractor)
+            {
+                //直接解压到服务端目录即可
+                await extractor.ExtractArchiveAsync(PanelManager.ServerDic);
+            }
+            //运行RoDB.exe
+            await Utils.RunCMD(ServerDic + "/RunRoDB.bat",10000);
+        }
+        public string BDXCDKPath { get => ServerDic + "/b.txt"; }
+        public string GetBDXCDK()
+        {
+            if (File.Exists(BDXCDKPath))
+                return File.ReadAllText(BDXCDKPath);
+            else
+                return null;
+        }
+        public void SaveBDXCDK(string cdk)
+        {
+            File.WriteAllText(BDXCDKPath, cdk);
+        }
+        /// <summary>
+        /// 重置服务端类型，卸载所有服务端
+        /// </summary>
+        public async Task ResetServer(bool IsAutoBackup = true,EventHandler<FileOperationsProgress> progressChange = null)
+        {
+            //只有不在运行时可以重置服务端
+            if (GameManager.GameState != GameServerState.Off)
+                throw new ServerIsRunningException("服务端正在运行（或者正在安装），请勿重置服务端！");
+            //如果服务端类型为None，即没装，就不允许删除
+            if(Config.ServerType == GameServerType.None)
+            {
+                throw new ArgumentException("没装服务端的情况下不允许重置服务端！");
+            }
+            try
+            {
+                BeginResetingServer?.Invoke();
+                //创建进度表示类
+                FileOperationsProgress progress = new();
+                progress.TotalNum = 1;
+                //自动备份
+                if (IsAutoBackup)
+                {
+                    await AutoBackup(progress, progressChange);
+                }
+                progress.CurrentOperationId += 1;
+                //卸载服务端，简单粗暴全部删除
+                DirectoryInfo info = new DirectoryInfo(ServerDic);
+                var Files = info.GetFiles();
+                var Directories = info.GetDirectories();
+                int Count = Files.Length + Directories.Length;
+                FileOperationProgress FileProgress = new();
+                progress.CurrentOperation = FileProgress;
+                //先删文件
+                for(int i = 0; i<Files.Length;i++)
+                {
+                    if (progressChange != null)
+                    {
+                        FileProgress.CurrentFileName = Files[i].FullName;
+                        FileProgress.PercentDone = i / Count;
+                        progressChange?.Invoke(this, progress);
+                    }
+                    Files[i].Delete();
+                }
+                //再删目录
+                for(int i = 0; i < Directories.Length; i++)
+                {
+                    if (progressChange != null)
+                    {
+                        FileProgress.CurrentFileName = Directories[i].FullName;
+                        FileProgress.PercentDone = (i + Files.Length) / Count;
+                        progressChange(this, progress);
+                    }
+                    Directories[i].Delete(true);
+                }
+                //删完设置服务端类型
+                SetGameServerType(GameServerType.None);
+                EndResetingServer?.Invoke();
+            }catch(Exception e)
+            {
+                FailedToResetServer?.Invoke(e);
+                throw;
             }
         }
         #endregion

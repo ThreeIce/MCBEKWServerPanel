@@ -16,7 +16,7 @@ namespace GameServerPanel
         /// 运行CMD命令，不处理运行出错和调用目标卡死的情况
         /// </summary>
         /// <param name="MaxExecuteTime">最多执行时间，以毫秒为单位</param>
-        public static async void RunCMD(string cmd,int MaxExecuteTime = 1000)
+        public static async Task RunCMD(string cmd,int MaxExecuteTime = 5000)
         {
             Process p = new Process();
             p.StartInfo.FileName = "cmd.exe";
@@ -29,13 +29,21 @@ namespace GameServerPanel
             p.StandardInput.WriteLine("cd " + PanelManager.RootDic);
             p.StandardInput.WriteLine(cmd);
             p.StandardInput.WriteLine("exit");
-            //1000毫秒后检查有没有退出，没有则强制退出
-            await Task.Delay(MaxExecuteTime);
-            if(p.HasExited != true)
+            //MaxExecuteTime毫秒后检查有没有退出，没有则强制退出，该任务异步执行，不等待
+            Task t = Task.Run(async () =>
             {
-                p.Kill();
-            }
-            p.Dispose();
+                await Task.Delay(MaxExecuteTime);
+                if (p.HasExited != true)
+                {
+                    p.Kill();
+                }
+                p.Dispose();
+            });
+            //等待运行完成，运行完成后结束函数
+            await Task.Run(() =>
+            {
+                p.WaitForExit();
+            });
         }
         /// <summary>
         /// 绝对路径转相对路径，基于程序运行目录且只能转程序运行目录下的子目录

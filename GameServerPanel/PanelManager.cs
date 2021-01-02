@@ -89,15 +89,19 @@ namespace GameServerPanel
         /// <summary>
         /// BDS配置路径
         /// </summary>
-        public static string BDSConfigPath { get => ServerDataDic + "\\server.properties"; }
+        public static string BDSConfigPath { get => ConfigsDic + "\\server.properties"; }
         /// <summary>
         /// EZ配置路径
         /// </summary>
-        public static string EZConfigPath { get => ServerDataDic + "\\ezcustom.yaml"; }
+        public static string EZConfigPath { get => ConfigsDic + "\\ezcustom.yaml"; }
         /// <summary>
         /// 各种杂项配置文件目录，包含BDX配置文件
         /// </summary>
-        public static string BasicConfigDic { get => ServerDataDic + "\\config"; }
+        public static string BasicConfigDic { get => ConfigsDic + "\\config"; }
+        /// <summary>
+        /// 白名单目录
+        /// </summary>
+        public static string WhitelistPath { get => ConfigsDic + "\\whitelist.json"; }
         /// <summary>
         /// 备份目录
         /// </summary>
@@ -250,6 +254,7 @@ namespace GameServerPanel
             Directory.CreateDirectory(ConfigsDic);
             File.Create(BDSConfigPath);
             File.Create(EZConfigPath);
+            File.Create(WhitelistPath);
             Directory.CreateDirectory(BasicConfigDic);
             Directory.CreateDirectory(BackupsDic);
             Directory.CreateDirectory(WorldsBackupDic);
@@ -646,6 +651,7 @@ namespace GameServerPanel
                 await Utils.RunCMD($"mklink /D \"{ServerDic}/behavior_packs\" \"..\\{Utils.GetRelativePath(PanelManager.BehaviorPacksDic)}\"");
                 await Utils.RunCMD($"mklink /D \"{ServerDic}/resource_packs\" \"..\\{Utils.GetRelativePath(PanelManager.ResourcePacksDic)}\"");
                 await Utils.RunCMD($"mklink \"{ServerDic}/server.properties\" \"..\\{Utils.GetRelativePath(PanelManager.BDSConfigPath)}\"");
+                await Utils.RunCMD($"mklink \"{ServerDic}/whitelist.json\" \"..\\{Utils.GetRelativePath(PanelManager.WhitelistPath)}\"");
             }
             //创建解压类和进度
             SevenZipExtractor extractor = new SevenZipExtractor(BDSPath);

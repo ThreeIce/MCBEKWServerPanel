@@ -140,6 +140,9 @@ namespace GameServerPanel
                     bar.progressBar.Value = e.CurrentOperation.PercentDone;
                     bar.FileName.Content = e.CurrentOperation.CurrentFileName;
                 });
+                //如果安装的是BDX，顺便保存一次激活码
+                if (SenderName == nameof(BDX_Install))
+                    BDX_CDK_Save_Button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 //关闭bar
                 bar.CanBeClosed = true;
                 bar.Close();
@@ -156,9 +159,6 @@ namespace GameServerPanel
                 bar.CanBeClosed = true;
                 bar.Close();
             }
-            //如果安装的是BDX，顺便保存一次激活码
-            if (SenderName == nameof(BDX_Install))
-                BDX_CDK_Save_Button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
         /// <summary>
         /// 重置服务端按钮点击
